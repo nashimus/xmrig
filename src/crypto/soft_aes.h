@@ -29,6 +29,8 @@
 
 #if defined(XMRIG_ARM)
 #   include "crypto/SSE2NEON.h"
+#elif defined(XMRIG_PPC64)
+#   include "crypto/SSE2ALTIVEC.h"
 #elif defined(__GNUC__)
 #   include <x86intrin.h>
 #else
@@ -86,9 +88,29 @@
 #define saes_u2(p)   saes_b2w(         p, saes_f3(p), saes_f2(p),          p)
 #define saes_u3(p)   saes_b2w(         p,          p, saes_f3(p), saes_f2(p))
 
+#if defined(XMRIG_PPC64)
+static inline __m128i v_rev(const __m128i& tmp1)
+{
+	return(vec_perm(tmp1,tmp1,(__m128i){ 0xf,0xe,0xd,0xc,0xb,0xa,0x9,0x8,0x7,0x6,0x5,0x4,0x3,0x2,0x1,0x0 }));
+}
+#endif
+
 alignas(16) const uint32_t saes_table[4][256] = { saes_data(saes_u0), saes_data(saes_u1), saes_data(saes_u2), saes_data(saes_u3) };
 alignas(16) const uint8_t  saes_sbox[256] = saes_data(saes_h0);
 
+#if defined(XMRIG_PPC64)
+static inline __m128i soft_aesenc(const uint32_t* in, __m128i key)
+{
+	__m128i in_vec;
+
+	in_vec[0] = in[0];
+	in_vec[1] = in[1];
+	in_vec[2] = in[2];
+	in_vec[3] = in[3];
+
+	return v_rev(__builtin_crypto_vcipher(v_rev(in_vec),v_rev(key)));
+}
+#else
 static inline __m128i soft_aesenc(const uint32_t* in, __m128i key)
 {
     const uint32_t x0 = in[0];
@@ -104,7 +126,14 @@ static inline __m128i soft_aesenc(const uint32_t* in, __m128i key)
 
     return _mm_xor_si128(out, key);
 }
+#endif
 
+#if defined(XMRIG_PPC64)
+static inline __m128i soft_aesenc(__m128i in, __m128i key)
+{
+	return v_rev(__builtin_crypto_vcipher(v_rev(in),v_rev(key)));
+}
+#else
 static inline __m128i soft_aesenc(__m128i in, __m128i key)
 {
     uint32_t x0, x1, x2, x3;
@@ -121,6 +150,7 @@ static inline __m128i soft_aesenc(__m128i in, __m128i key)
 
     return _mm_xor_si128(out, key);
 }
+#endif
 
 static inline uint32_t sub_word(uint32_t key)
 {
@@ -137,6 +167,14 @@ static inline uint32_t _rotr(uint32_t value, uint32_t amount)
 }
 #endif
 
+#if defined(XMRIG_PPC64)
+template<uint8_t rcon>
+static inline __m128i soft_aeskeygenassist(__m128i key)
+{
+	key = __builtin_crypto_vsbox(vec_perm(key,key,(__m128i){0x4,0x5,0x6,0x7, 0x5,0x6,0x7,0x4, 0xc,0xd,0xe,0xf, 0xd,0xe,0xf,0xc}));
+	return vec_xor(key,(__m128i){0,0,0,0, rcon,0,0,0, 0,0,0,0, rcon,0,0,0});
+}
+#else
 template<uint8_t rcon>
 static inline __m128i soft_aeskeygenassist(__m128i key)
 {
@@ -144,3 +182,4 @@ static inline __m128i soft_aeskeygenassist(__m128i key)
     const uint32_t X3 = sub_word(_mm_cvtsi128_si32(_mm_shuffle_epi32(key, 0xFF)));
     return _mm_set_epi32(_rotr(X3, 8) ^ rcon, X3, _rotr(X1, 8) ^ rcon, X1);
 }
+#endif

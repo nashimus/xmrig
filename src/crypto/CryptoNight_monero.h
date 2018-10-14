@@ -83,6 +83,25 @@
         sqrt_result_xmm_##part = int_sqrt_v2(cx_0 + division_result); \
     } while (0)
 
+#   define VARIANT2_INTEGER_MATH_DUAL(part0, cl0, cx0, part1, cl1, cx1) \
+    do { \
+        const uint64_t sqrt_result0 = static_cast<uint64_t>(_mm_cvtsi128_si64(sqrt_result_xmm_##part0)); \
+        const uint64_t cx0_0 = _mm_cvtsi128_si64(cx0); \
+        cl0 ^= static_cast<uint64_t>(_mm_cvtsi128_si64(division_result_xmm_##part0)) ^ (sqrt_result0 << 32); \
+        const uint32_t d0 = static_cast<uint32_t>(cx0_0 + (sqrt_result0 << 1)) | 0x80000001UL; \
+        const uint64_t cx0_1 = _mm_cvtsi128_si64(_mm_srli_si128(cx0, 8)); \
+        const uint64_t division_result0 = static_cast<uint32_t>(cx0_1 / d0) + ((cx0_1 % d0) << 32); \
+        division_result_xmm_##part0 = _mm_cvtsi64_si128(static_cast<int64_t>(division_result0)); \
+        const uint64_t sqrt_result1 = static_cast<uint64_t>(_mm_cvtsi128_si64(sqrt_result_xmm_##part1)); \
+        const uint64_t cx1_0 = _mm_cvtsi128_si64(cx1); \
+        cl1 ^= static_cast<uint64_t>(_mm_cvtsi128_si64(division_result_xmm_##part1)) ^ (sqrt_result1 << 32); \
+        const uint32_t d1 = static_cast<uint32_t>(cx1_0 + (sqrt_result1 << 1)) | 0x80000001UL; \
+        const uint64_t cx1_1 = _mm_cvtsi128_si64(_mm_srli_si128(cx1, 8)); \
+        const uint64_t division_result1 = static_cast<uint32_t>(cx1_1 / d1) + ((cx1_1 % d1) << 32); \
+        division_result_xmm_##part1 = _mm_cvtsi64_si128(static_cast<int64_t>(division_result1)); \
+        int_sqrt_v2_dual(cx0_0 + division_result0, &sqrt_result_xmm_##part0, cx1_0 + division_result1, &sqrt_result_xmm_##part1); \
+    } while (0)
+
 #   define VARIANT2_SHUFFLE(base_ptr, offset, _a, _b, _b1) \
     do { \
         const __m128i chunk1 = _mm_load_si128((__m128i *)((base_ptr) + ((offset) ^ 0x10))); \

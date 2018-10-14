@@ -34,6 +34,8 @@
 #else
 #   if defined(XMRIG_ARM) && !defined(__clang__)
 #       include "aligned_malloc.h"
+#   elif defined(XMRIG_PPC64)
+#       include "aligned_malloc.h"
 #   else
 #       include <mm_malloc.h>
 #   endif
