@@ -39,9 +39,12 @@
  *
  * Switching is instant, and only happens after a successful connection, so you never loose any hashes.
  *
- * If you plan on changing this setting to 0 please consider making a one off donation to my wallet:
+ * If you plan on changing this setting to 0 please consider making a one off donation to the developer wallet(s):
+ * xmrig general (NON-POWER)
  * XMR: 48edfHu7V9Z84YzzMa6fUueoELZ9ZRXq9VetWzYGzKt52XU5xvqgzYnDK9URnRoJMk1j8nLwEVsaSWJ4fhdUyZijBGUicoD
  * BTC: 1P7ujsXeX7GxQwHNnJsRMgAdNkFZmNVqJT
+ * xmrig POWER port:
+ * XMR: 458isHDaTqAStk6pFHrvMWEdXgGFQNSsk4g4kxeHF8pYSmTuCAnf3d17S5hDowk1vT8W5uKSqRSyHhBmqeAShi4iN8tnWSt
  */
 constexpr const int kDefaultDonateLevel = 5;
 constexpr const int kMinimumDonateLevel = 1;

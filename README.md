@@ -131,6 +131,22 @@ Also you can use configuration via config file, default name **config.json**. So
 
 Please note performance is highly dependent on system load. The numbers above are obtained on an idle system. Tasks heavily using a processor cache, such as video playback, can greatly degrade hashrate. Optimal number of threads depends on the size of the L3 cache of a processor, 1 thread requires 2 MB of cache.
 
+### POWER performance comparison, CNv7 to CNv8:
+* 4 and 8 core POWER9 CPUs will see performance at only ~62% of CNv7.  This is because the 4 and 8 core CPUs were essentially being used as an AES round and cache memory ASIC, and CNv8 "wants" to see proof of existence of other parts of a general purpose CPU.  The limiting factor is now the internal cache bus, which was never designed for the kind of bandwidth needed to have all 4 SMT threads operating at full capacity on many different execution units.
+* Higher core count POWER9 CPUs will see performance at around 70% of CNv7.  CNv8 integrated two uncommonly used instructions (integer square root, integer divide) that leverage unique hardware in specific x86 CPUs.
+
+### POWER performance discussion
+POWER deemphasised the two rarely used integer square root / integer divide instructions that are key for CNv8 performance, focusing more on improving performance for other areas of the core design.  Unfortunately a more balanced CNv8 algorithm, testing other parts of the CPU in addition to these two instructions, would have been a better choice.  As it stands Monero requires a specific type of ASIC (Core i / Xeon / Zen CPU) for maximum performance by design.  These CPUs are owner-hostile and present serious risks in the form of the ME and PSP vendor DRM systems.
+
+The current bottleneck in exploiting POWER9's SMT4 support to work around the slow div() instruction, which uses a separate execution unit that is shared between SMT2 slices, is actually the TLB.  When more than two threads are running on the same core, first a slowdown affecting all loads (including load hints such as dcbt) is observed.  If the number of threads is increased further, a large spike in dTLB misses is observed.  The net effect of this is that increasing the number of threads on a chiplet, even though it would better feed the division unit, actually maintains around the same hashrate as before, if not lower.  Work continues to remove the dTLB bottleneck on these systems.
+
+### Maximum performance for POWER9 4 and 8 core CPUs
+4 threads per core, power save == 1
+
+### Maximum performance for POWER9 CPUs greater than 8 cores
+1 thread per core, power save == 2
+(2 threads per chiplet)
+
 ### Maximum performance checklist
 * Idle operating system.
 * Do not exceed optimal thread count.
@@ -139,21 +155,11 @@ Please note performance is highly dependent on system load. The numbers above ar
 * Enable fast memory (Large/Huge pages).
 
 ## Donations
+### xmrig general
 * XMR: `48edfHu7V9Z84YzzMa6fUueoELZ9ZRXq9VetWzYGzKt52XU5xvqgzYnDK9URnRoJMk1j8nLwEVsaSWJ4fhdUyZijBGUicoD`
 * BTC: `1P7ujsXeX7GxQwHNnJsRMgAdNkFZmNVqJT`
-
-## Release checksums
-### SHA-256
-```
-fd909cef75c65c1ee8facd78e968c359e4ac4d2f0b2aaef8c6d3e0138979d0ea xmrig-2.8.1-xenial-amd64.tar.gz/xmrig-2.8.1/xmrig
-e4987eaec57c1784c423e03978e22262adf070ab3ad7b2a6ce8d0d0626db4cbd xmrig-2.8.1-xenial-amd64.tar.gz/xmrig-2.8.1/xmrig-notls
-4ebf6053513c8b72b46f54481f33367aae6356fc5f271c9236d708a34cd16e2a xmrig-2.8.1-gcc-win32.zip/xmrig.exe
-f4ce5b76a611f6768c9a035eae1e49f61666f3e5370b54bd447ecc3b0098efcb xmrig-2.8.1-gcc-win32.zip/xmrig-notls.exe
-39259979b4228899c0ef985bcfc283e169afd44323eedb0341144dbc0c0f30e9 xmrig-2.8.1-gcc-win64.zip/xmrig.exe
-68af0f11b29b9b67414d0b661446baa0ad6020598c04c5d0cf24797167753117 xmrig-2.8.1-gcc-win64.zip/xmrig-notls.exe
-5d8b94157ebb4a7729f0eb8622945c266b756c994c60f91514b329edeb287867 xmrig-2.8.1-msvc-win64.zip/xmrig.exe
-d97c691d6044f916b9253820832f1a08402bb63aa75fb146ea8c31f51cebe974 xmrig-2.8.1-msvc-win64.zip/xmrig-notls.exe
-```
+### POWER port
+* XMR: `458isHDaTqAStk6pFHrvMWEdXgGFQNSsk4g4kxeHF8pYSmTuCAnf3d17S5hDowk1vT8W5uKSqRSyHhBmqeAShi4iN8tnWSt`
 
 ## Contacts
 * support@xmrig.com
